@@ -1,29 +1,44 @@
-name: Temporary Windows RDP
+name: RustDesk Windows Build
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  setup-rdp:
+  build:
     runs-on: windows-latest
 
     steps:
-      - name: Install RDP Tools
-        run: |
-          powershell -Command "Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force"
-          powershell -Command "Install-WindowsFeature -Name Remote-Desktop-Services"
-          powershell -Command "Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'"
-      
-      - name: Create RDP User
-        run: |
-          powershell -Command "net user github_user Password123! /add"
-          powershell -Command "net localgroup administrators github_user /add"
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Display RDP Connection Info
+      # Install Rust
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+
+      # Install additional dependencies
+      - name: Install dependencies
         run: |
-          $IP = (Invoke-RestMethod http://ipinfo.io/json).ip
-          Write-Host "Public IP: $IP"
-          Write-Host "Username: github_user"
-          Write-Host "Password: Password123!"
+          choco install -y cmake
+          choco install -y mingw
+          rustup component add rustfmt clippy
+
+      # Build the project
+      - name: Build RustDesk
+        run: |
+          cargo build --release
+
+      # Archive the build output
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: rustdesk-windows-build
+          path: target/release/rustdesk.exe
