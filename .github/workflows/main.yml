@@ -1,44 +1,33 @@
-name: RustDesk Windows Build
+# rustdesk-server.yml
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+# Configure the network
+network:
+  # Port for relay server
+  relay_server:
+    port: 21115
+    bind: "0.0.0.0"  # Bind to all interfaces (you can specify your server IP here)
+  # Port for rendezvous server
+  rendezvous_server:
+    port: 21116
+    bind: "0.0.0.0"
 
-jobs:
-  build:
-    runs-on: windows-latest
+# Logging
+log:
+  level: info
+  file: "rustdesk.log"
 
-    steps:
-      # Checkout the repository
-      - name: Checkout code
-        uses: actions/checkout@v3
+# Enable HTTPS
+https:
+  enable: true
+  cert_file: "/path/to/ssl/certificate.pem"
+  key_file: "/path/to/ssl/key.pem"
 
-      # Install Rust
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: x86_64-pc-windows-msvc
+# Monitoring (optional, you can adjust settings for monitoring purposes)
+monitoring:
+  enable: true
+  port: 9090
 
-      # Install additional dependencies
-      - name: Install dependencies
-        run: |
-          choco install -y cmake
-          choco install -y mingw
-          rustup component add rustfmt clippy
-
-      # Build the project
-      - name: Build RustDesk
-        run: |
-          cargo build --release
-
-      # Archive the build output
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: rustdesk-windows-build
-          path: target/release/rustdesk.exe
+# Config for users (you can add user permissions or other settings here)
+users:
+  - username: "admin"
+    password: "securepassword123"
