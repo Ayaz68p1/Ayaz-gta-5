@@ -21,8 +21,7 @@ jobs:
     - name: Configure RustDesk Host
       run: |
         New-Item -Path "C:\RustDesk\Config" -ItemType Directory -Force
-        Set-Content -Path "C:\RustDesk\Config/host.toml" -Valu
-"@
+        Set-Content -Path "C:\RustDesk\Config/host.toml" -Val
 
     - name: Start RustDesk
       run: |
