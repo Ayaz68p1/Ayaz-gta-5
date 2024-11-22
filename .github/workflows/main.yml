@@ -1,0 +1,32 @@
+name: RustDesk Setup
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  setup-rustdesk:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Download RustDesk
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/rustdesk/rustdesk/releases/latest/download/rustdesk-host.zip" -OutFile "rustdesk.zip"
+        Expand-Archive -Path "rustdesk.zip" -DestinationPath "./rustdesk"
+
+    - name: Configure RustDesk Host
+      run: |
+        $env:CONFIG_PATH = "./rustdesk/config"
+        New-Item -Path $env:CONFIG_PATH -ItemType Directory -Force
+        Set-Content -Path "$env:CONFIG_PATH/host.toml" -Value @"
+[server]
+port = 21115
+"@
+
+    - name: Start RustDesk
+      run: |
+        Start-Process -NoNewWindow -FilePath "./rustdesk/rustdesk.exe" -ArgumentList "--server"
