@@ -1,4 +1,4 @@
-name: RustDesk Host Setup
+name: Temporary Windows RDP
 
 on:
   push:
@@ -6,23 +6,24 @@ on:
       - main
 
 jobs:
-  setup-rustdesk:
+  setup-rdp:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Install RDP Tools
+        run: |
+          powershell -Command "Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force"
+          powershell -Command "Install-WindowsFeature -Name Remote-Desktop-Services"
+          powershell -Command "Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'"
+      
+      - name: Create RDP User
+        run: |
+          powershell -Command "net user github_user Password123! /add"
+          powershell -Command "net localgroup administrators github_user /add"
 
-    - name: Install RustDesk Host
-      run: |
-        Invoke-WebRequest -Uri "https://github.com/rustdesk/rustdesk/releases/latest/download/rustdesk-host.zip" -OutFile "rustdesk.zip"
-        Expand-Archive -Path "rustdesk.zip" -DestinationPath "./rustdesk"
-
-    - name: Configure RustDesk Host
-      run: |
-        New-Item -Path "C:\RustDesk\Config" -ItemType Directory -Force
-        Set-Content -Path "C:\RustDesk\Config/host.toml" -Val
-
-    - name: Start RustDesk
-      run: |
-        Start-Process -NoNewWindow -FilePath "C:\RustDesk\rustdesk.exe" -ArgumentList "--server"
+      - name: Display RDP Connection Info
+        run: |
+          $IP = (Invoke-RestMethod http://ipinfo.io/json).ip
+          Write-Host "Public IP: $IP"
+          Write-Host "Username: github_user"
+          Write-Host "Password: Password123!"
