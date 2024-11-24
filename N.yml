@@ -1,0 +1,42 @@
+name: Temporary Windows RDP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  setup-rdp:
+    runs-on: windows-latest
+
+    steps:
+      - name: Install RDP Tools
+        run: |
+          # Bypass execution policy for PowerShell scripts
+          powershell -Command "Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force"
+          # Install Remote Desktop Services feature
+          powershell -Command "Install-WindowsFeature -Name Remote-Desktop-Services"
+          # Enable the RDP firewall rule
+          powershell -Command "Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'"
+
+      - name: Install RustDesk
+        run: |
+          # Download and install RustDesk
+          Invoke-WebRequest -Uri "https://github.com/rustdesk/rustdesk/releases/download/v1.1.9/rustdesk-1.1.9-x64.msi" -OutFile "rustdesk.msi"
+          Start-Process msiexec.exe -ArgumentList "/i", "rustdesk.msi", "/quiet", "/norestart" -Wait
+          Remove-Item -Force "rustdesk.msi" # Clean up the installer
+
+      - name: Create RDP User
+        run: |
+          # Create a new user and add to administrators group
+          powershell -Command "net user github_user Password123! /add"
+          powershell -Command "net localgroup administrators github_user /add"
+
+      - name: Display RDP Connection Info
+        run: |
+          # Get public IP address
+          $IP = (Invoke-RestMethod http://ipinfo.io/json).ip
+          Write-Host "Public IP: $IP"
+          Write-Host "Username: github_user"
+          Write-Host "Password: Password123!"
+          Write-Host "Use RustDesk client to connect to $IP"
